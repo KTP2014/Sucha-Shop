@@ -1,0 +1,50 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String       @id @default(uuid())
+  name        String
+  pin         String       @unique // 4 digits unique PIN
+  role        String       // "OWNER" or "STAFF"
+  isActive    Boolean      @default(true)
+  stockCounts StockCount[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model StockCount {
+  id           String    @id @default(uuid())
+  itemId       String    // Loyverse Item ID
+  itemName     String    // Loyverse Item Name
+  variantId    String    // Loyverse Variant ID
+  variantName  String    // Loyverse Variant Name (Size/Color combination)
+  sku          String?   // Product SKU
+  quantity     Int       // Counted quantity
+  note         String?   // Optional comment or markdown remarks
+  type         String    @default("COUNT") // "COUNT" (นับสต็อก) or "ADJUST" (ปรับสต็อก)
+  status       String    @default("PENDING") // PENDING, SYNCED, REJECTED
+  createdBy    String    @default("staff")   // Author name (kept for display compatibility)
+  userId       String?   // Optional link to User model
+  user         User?     @relation(fields: [userId], references: [id])
+  storeId      String?   // Loyverse store ID used for syncing
+  storeName    String?   // Loyverse store Name
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  syncedAt     DateTime?
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  stockCountId String
+  action       String   // "EDIT" or "DELETE"
+  oldValue     String   // JSON string of old fields
+  newValue     String   // JSON string of new fields
+  performedBy  String   // User name or ID who made the action
+  createdAt    DateTime @default(now())
+}
